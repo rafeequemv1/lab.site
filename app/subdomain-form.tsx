@@ -28,6 +28,9 @@ type CreateState = {
   success?: boolean;
   subdomain?: string;
   icon?: string;
+  title?: string;
+  bio?: string;
+  template?: 'hero' | 'minimal';
   customDomain?: string;
 };
 
@@ -135,7 +138,42 @@ export function SubdomainForm() {
 
   return (
     <form action={action} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          name="title"
+          placeholder="My Lab Website"
+          defaultValue={state?.title}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="bio">Bio</Label>
+        <Input
+          id="bio"
+          name="bio"
+          placeholder="I build cool things on the internet."
+          defaultValue={state?.bio}
+          required
+        />
+      </div>
+
       <SubdomainInput defaultValue={state?.subdomain} />
+
+      <div className="space-y-2">
+        <Label htmlFor="template">Website Template</Label>
+        <select
+          id="template"
+          name="template"
+          className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          defaultValue={state?.template || 'hero'}
+        >
+          <option value="hero">Hero Template</option>
+          <option value="minimal">Minimal Template</option>
+        </select>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="customDomain">Custom Domain (optional)</Label>
@@ -152,12 +190,17 @@ export function SubdomainForm() {
 
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
 
+      <label className="flex items-center gap-2 text-sm text-gray-600">
+        <input type="checkbox" name="isPublished" defaultChecked />
+        Publish immediately
+      </label>
+
       {state?.error && (
         <div className="text-sm text-red-500">{state.error}</div>
       )}
 
       <Button type="submit" className="w-full" disabled={isPending || !icon}>
-        {isPending ? 'Creating...' : 'Create Subdomain'}
+        {isPending ? 'Publishing...' : 'Publish Website'}
       </Button>
     </form>
   );

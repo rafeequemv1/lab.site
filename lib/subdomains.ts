@@ -27,8 +27,21 @@ export function isValidIcon(str: string) {
 }
 
 type SubdomainData = {
+  title?: string;
+  bio?: string;
   emoji: string;
+  template?: 'hero' | 'minimal';
+  isPublished?: boolean;
+  ownerEmail?: string;
   createdAt: number;
+};
+
+type CustomDomainData = {
+  subdomain: string;
+  cnameTarget: string;
+  status: 'pending' | 'active' | 'failed';
+  createdAt: number;
+  verifiedAt?: number;
 };
 
 export async function getSubdomainData(subdomain: string) {
@@ -36,10 +49,13 @@ export async function getSubdomainData(subdomain: string) {
   const data = await redis.get<SubdomainData>(
     `subdomain:${sanitizedSubdomain}`
   );
+  if (!data?.isPublished) {
+    return null;
+  }
   return data;
 }
 
-export async function getAllSubdomains() {
+export async function getAllSubdomains(ownerEmail?: string) {
   const keys = await redis.keys('subdomain:*');
 
   if (!keys.length) {
@@ -47,15 +63,45 @@ export async function getAllSubdomains() {
   }
 
   const values = await redis.mget<SubdomainData[]>(...keys);
+  const customDomainKeys = await redis.keys('custom-domain:*');
+  const customDomainValues = customDomainKeys.length
+    ? await redis.mget<CustomDomainData[]>(...customDomainKeys)
+    : [];
+  const customDomainsBySubdomain = new Map<
+    string,
+    Array<{ domain: string; status: string; cnameTarget: string }>
+  >();
 
-  return keys.map((key, index) => {
-    const subdomain = key.replace('subdomain:', '');
-    const data = values[index];
-
-    return {
-      subdomain,
-      emoji: data?.emoji || '❓',
-      createdAt: data?.createdAt || Date.now()
-    };
+  customDomainKeys.forEach((key, index) => {
+    const value = customDomainValues[index];
+    if (!value?.subdomain) {
+      return;
+    }
+    const current = customDomainsBySubdomain.get(value.subdomain) || [];
+    current.push({
+      domain: key.replace('custom-domain:', ''),
+      status: value.status,
+      cnameTarget: value.cnameTarget
+    });
+    customDomainsBySubdomain.set(value.subdomain, current);
   });
+
+  return keys
+    .map((key, index) => {
+      const subdomain = key.replace('subdomain:', '');
+      const data = values[index];
+
+      return {
+        subdomain,
+        title: data?.title || subdomain,
+        bio: data?.bio || '',
+        emoji: data?.emoji || '❓',
+        template: data?.template || 'hero',
+        isPublished: data?.isPublished ?? false,
+        ownerEmail: data?.ownerEmail || '',
+        createdAt: data?.createdAt || Date.now(),
+        customDomains: customDomainsBySubdomain.get(subdomain) || []
+      };
+    })
+    .filter((site) => !ownerEmail || site.ownerEmail === ownerEmail);
 }

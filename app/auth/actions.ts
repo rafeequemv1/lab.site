@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -9,36 +8,61 @@ export type AuthState = {
   success?: string;
 };
 
-export async function sendMagicLinkAction(
+export async function signInWithPasswordAction(
   _prevState: AuthState,
   formData: FormData
 ) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
+  const password = String(formData.get('password') || '');
   if (!email) {
     return { error: 'Email is required.' };
   }
-
-  const supabase = await createSupabaseServerClient();
-  const h = await headers();
-  const host = h.get('x-forwarded-host') || h.get('host');
-  const proto = h.get('x-forwarded-proto') || 'https';
-
-  if (!host) {
-    return { error: 'Could not determine callback host.' };
+  if (!password) {
+    return { error: 'Password is required.' };
   }
 
-  const callback = `${proto}://${host}/auth/callback`;
-
-  const { error } = await supabase.auth.signInWithOtp({
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithPassword({
     email,
-    options: { emailRedirectTo: callback }
+    password
   });
 
   if (error) {
     return { error: error.message };
   }
 
-  return { success: 'Magic link sent. Check your inbox.' };
+  redirect('/admin');
+}
+
+export async function signUpWithPasswordAction(
+  _prevState: AuthState,
+  formData: FormData
+) {
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const password = String(formData.get('password') || '');
+  const confirmPassword = String(formData.get('confirmPassword') || '');
+
+  if (!email) {
+    return { error: 'Email is required.' };
+  }
+  if (!password || password.length < 6) {
+    return { error: 'Password must be at least 6 characters.' };
+  }
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match.' };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: 'Account created. You can sign in now.' };
 }
 
 export async function signOutAction() {

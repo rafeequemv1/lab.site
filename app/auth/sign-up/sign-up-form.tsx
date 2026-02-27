@@ -1,14 +1,14 @@
 'use client';
 
 import { useActionState } from 'react';
-import { signInWithPasswordAction, type AuthState } from '@/app/auth/actions';
+import { signUpWithPasswordAction, type AuthState } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function SignInForm() {
+export function SignUpForm() {
   const [state, action, isPending] = useActionState<AuthState, FormData>(
-    signInWithPasswordAction,
+    signUpWithPasswordAction,
     {}
   );
 
@@ -16,21 +16,18 @@ export function SignInForm() {
     <form action={action} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          name="email"
-          placeholder="you@example.com"
-          required
-        />
+        <Input id="email" type="email" name="email" required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
+        <Input id="password" type="password" name="password" required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
         <Input
-          id="password"
+          id="confirmPassword"
           type="password"
-          name="password"
-          placeholder="••••••••"
+          name="confirmPassword"
           required
         />
       </div>
@@ -41,7 +38,7 @@ export function SignInForm() {
       )}
 
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'Signing in...' : 'Sign in'}
+        {isPending ? 'Creating account...' : 'Create account'}
       </Button>
     </form>
   );
