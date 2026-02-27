@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { deleteSubdomainAction } from '@/app/actions';
+import { signOutAction } from '@/app/auth/actions';
 import { rootDomain, protocol } from '@/lib/utils';
 
 type Tenant = {
@@ -19,19 +20,23 @@ type DeleteState = {
   success?: string;
 };
 
-function DashboardHeader() {
-  // TODO: You can add authentication here with your preferred auth provider
-
+function DashboardHeader({ userEmail }: { userEmail: string }) {
   return (
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">Subdomain Management</h1>
       <div className="flex items-center gap-4">
+        <span className="text-sm text-gray-500">{userEmail}</span>
         <Link
           href={`${protocol}://${rootDomain}`}
           className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           {rootDomain}
         </Link>
+        <form action={signOutAction}>
+          <Button type="submit" variant="outline" size="sm">
+            Sign out
+          </Button>
+        </form>
       </div>
     </div>
   );
@@ -109,7 +114,13 @@ function TenantGrid({
   );
 }
 
-export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
+export function AdminDashboard({
+  tenants,
+  userEmail
+}: {
+  tenants: Tenant[];
+  userEmail: string;
+}) {
   const [state, action, isPending] = useActionState<DeleteState, FormData>(
     deleteSubdomainAction,
     {}
@@ -117,7 +128,7 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
 
   return (
     <div className="space-y-6 relative p-4 md:p-8">
-      <DashboardHeader />
+      <DashboardHeader userEmail={userEmail} />
       <TenantGrid tenants={tenants} action={action} isPending={isPending} />
 
       {state.error && (
