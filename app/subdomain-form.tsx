@@ -28,6 +28,7 @@ type CreateState = {
   success?: boolean;
   subdomain?: string;
   icon?: string;
+  customDomain?: string;
 };
 
 function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
@@ -135,6 +136,19 @@ export function SubdomainForm() {
   return (
     <form action={action} className="space-y-4">
       <SubdomainInput defaultValue={state?.subdomain} />
+
+      <div className="space-y-2">
+        <Label htmlFor="customDomain">Custom Domain (optional)</Label>
+        <Input
+          id="customDomain"
+          name="customDomain"
+          placeholder="domain.com"
+          defaultValue={state?.customDomain}
+        />
+        <p className="text-xs text-gray-500">
+          If provided, set DNS CNAME to <code>cname.rafeeque.com</code>.
+        </p>
+      </div>
 
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
 

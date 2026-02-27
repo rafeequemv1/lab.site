@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { rootDomain } from '@/lib/utils';
+import { redis } from '@/lib/redis';
 
 function extractSubdomain(request: NextRequest): string | null {
   const url = request.url;
@@ -42,7 +43,27 @@ function extractSubdomain(request: NextRequest): string | null {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const subdomain = extractSubdomain(request);
+  const host = request.headers.get('host') || '';
+  const hostname = host.split(':')[0];
+  let subdomain = extractSubdomain(request);
+
+  if (!subdomain) {
+    const rootDomainFormatted = rootDomain.split(':')[0];
+    const isRootHost =
+      hostname === rootDomainFormatted ||
+      hostname === `www.${rootDomainFormatted}` ||
+      hostname.endsWith(`.${rootDomainFormatted}`) ||
+      hostname.endsWith('.vercel.app');
+
+    if (!isRootHost) {
+      const customDomainData = await redis.get<{ subdomain?: string }>(
+        `domain:${hostname}`
+      );
+      if (customDomainData?.subdomain) {
+        subdomain = customDomainData.subdomain;
+      }
+    }
+  }
 
   if (subdomain) {
     // Block access to admin page from subdomains
